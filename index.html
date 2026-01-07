@@ -1,160 +1,123 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8">
-<title>高度表转换练习</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<style>
-body {
-  font-family: "微软雅黑", Arial;
-  background: #f2f2f2;
-  text-align: center;
-}
-.card {
-  background: white;
-  max-width: 420px;
-  margin: 40px auto;
-  padding: 30px;
-  border-radius: 12px;
-}
-#meter { font-size: 36px; margin: 20px 0; }
-#timer { font-size: 20px; color: red; }
-input {
-  font-size: 22px;
-  padding: 8px;
-  width: 80%;
-  text-align: center;
-}
-button {
-  font-size: 20px;
-  margin-top: 15px;
-  padding: 8px 30px;
-}
-#result { margin-top: 15px; font-size: 18px; text-align:left; }
-</style>
+  <meta charset="UTF-8">
+  <title>高度表转换练习</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto;
+      background: #f4f6f8;
+      text-align: center;
+      padding: 20px;
+    }
+    h1 {
+      margin-bottom: 20px;
+    }
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 20px;
+      max-width: 420px;
+      margin: auto;
+      box-shadow: 0 4px 12px rgba(0,0,0,.1);
+    }
+    .question {
+      font-size: 28px;
+      margin: 20px 0;
+    }
+    input {
+      font-size: 20px;
+      padding: 10px;
+      width: 80%;
+      text-align: center;
+    }
+    button {
+      font-size: 18px;
+      padding: 10px 20px;
+      margin-top: 15px;
+    }
+    .timer {
+      font-size: 16px;
+      color: #666;
+      margin-top: 10px;
+    }
+  </style>
 </head>
-
 <body>
 
-<div class="card" id="startScreen">
-  <h2>高度表转换练习</h2>
-  <button onclick="startTest()">开始测试</button>
-</div>
+<h1>高度表转换练习</h1>
 
-<div class="card" id="quizScreen" style="display:none;">
-  <div id="meter"></div>
-  <div id="timer"></div>
-  <input id="input" placeholder="输入英尺" inputmode="numeric">
-  <br>
-  <button onclick="submit()">下一题</button>
-  <div id="result"></div>
+<div class="card" id="card">
+  <button id="startBtn">开始测试</button>
 </div>
 
 <script>
-const TABLE = [
- [12500,41100],[11900,39100],[11300,37100],[10700,35100],[10100,33100],
- [9500,31100],[8900,29100],[8100,26600],[7500,24600],[6900,22600],
- [6300,20700],[5700,18700],[5100,16700],[4500,14800],[3900,12800],
- [3300,10800],[2700,8900],[2100,6900],[1500,4900],[900,3000],
- [12200,40100],[11600,38100],[11000,36100],[10400,34100],[9800,32100],
- [9200,30100],[8400,27600],[7800,25600],[7200,23600],[6600,21700],
- [6000,19700],[5400,17700],[4800,15700],[4200,13800],[3600,11800],
- [3000,9800],[2400,7900],[1800,5900],[1200,3900],[600,2000]
+const data = [
+  [12500, 41100],[11900,39100],[11300,37100],[10700,35100],
+  [10100,33100],[9500,31100],[8900,29100],[8100,26600],
+  [7500,24600],[6900,22600],[6300,20700],[5700,18700],
+  [5100,16700],[4500,14800],[3900,12800],[3300,10800],
+  [2700,8900],[2100,6900],[1500,4900],[900,3000],
+  [12200,40100],[11600,38100],[11000,36100],[10400,34100],
+  [9800,32100],[9200,30100],[8400,27600],[7800,25600],
+  [7200,23600],[6600,21700]
 ];
 
-let questions = [], index = 0, correct = 0, wrong = [];
-let time = 5, timerId, submitted = false;
+let questions = [];
+let index = 0;
+let correct = 0;
+let timer;
+let timeLeft = 5;
 
-const startScreen = document.getElementById("startScreen");
-const quizScreen = document.getElementById("quizScreen");
-const meterEl = document.getElementById("meter");
-const timerEl = document.getElementById("timer");
-const inputEl = document.getElementById("input");
-const resultEl = document.getElementById("result");
+const card = document.getElementById("card");
 
-function startTest(){
-  questions = [...TABLE].sort(()=>Math.random()-0.5).slice(0,30);
-  index = 0; correct = 0; wrong = [];
-  startScreen.style.display = "none";
-  quizScreen.style.display = "block";
-  load();
+document.getElementById("startBtn").onclick = start;
+
+function start() {
+  questions = data.sort(() => Math.random() - 0.5).slice(0, 30);
+  index = 0;
+  correct = 0;
+  next();
 }
 
-function startTimer(){
-  time = 5;
-  submitted = false;
-  timerEl.innerText = `剩余时间：${time}s`;
-  timerId = setInterval(()=>{
-    time--;
-    timerEl.innerText = `剩余时间：${time}s`;
-    if(time <= 0){
-      clearInterval(timerId);
-      autoSubmit();
-    }
-  },1000);
-}
-
-function load(){
-  if(index >= questions.length){
-    showResult();
+function next() {
+  if (index >= questions.length) {
+    card.innerHTML = `<h2>完成</h2>
+    <p>正确率：${Math.round(correct / questions.length * 100)}%</p>`;
     return;
   }
-  meterEl.innerText = questions[index][0] + " 米";
-  inputEl.value = "";
-  inputEl.focus();
-  resultEl.innerText = "";
-  startTimer();
+
+  timeLeft = 5;
+  const [m, ft] = questions[index];
+
+  card.innerHTML = `
+    <div class="question">${m} 米 = ? 英尺</div>
+    <input id="ans" autofocus />
+    <div class="timer">剩余 ${timeLeft} 秒</div>
+    <button onclick="submit()">下一题</button>
+  `;
+
+  document.getElementById("ans").addEventListener("keydown", e => {
+    if (e.key === "Enter") submit();
+  });
+
+  timer = setInterval(() => {
+    timeLeft--;
+    document.querySelector(".timer").innerText = `剩余 ${timeLeft} 秒`;
+    if (timeLeft <= 0) submit();
+  }, 1000);
 }
 
-function judge(){
-  let user = inputEl.value.trim();
-  let answer = questions[index][1];
-  if(user && user == answer){
+function submit() {
+  clearInterval(timer);
+  const input = document.getElementById("ans");
+  if (input && Number(input.value) === questions[index][1]) {
     correct++;
-  } else {
-    wrong.push(`${questions[index][0]} 米 → ${answer} 英尺`);
   }
-}
-
-function submit(){
-  if(submitted) return;
-  submitted = true;
-  clearInterval(timerId);
-  judge();
   index++;
-  setTimeout(load, 200);
+  next();
 }
-
-function autoSubmit(){
-  if(submitted) return;
-  submitted = true;
-  judge();
-  index++;
-  setTimeout(load, 200);
-}
-
-function showResult(){
-  document.body.innerHTML = `
-    <div class="card">
-      <h2>训练完成</h2>
-      <p>正确率：${correct}/30</p >
-      <h3>错题：</h3>
-      <div style="text-align:left">${wrong.join("<br>")}</div>
-    </div>`;
-}
-
-inputEl.addEventListener("keydown", function(e){
-  if(e.key === "Enter"){
-    submit();
-  }
-});
-
-document.addEventListener("keydown", function(e){
-  if(e.code === "Space"){
-    e.preventDefault();
-    submit();
-  }
-});
 </script>
 
 </body>
